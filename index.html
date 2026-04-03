@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Placement Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a0a;--bg2:#111111;--surface:#181818;--card:#1e1e1e;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --p:#ff3b3b;--p2:#cc1f1f;--p-glow:rgba(255,59,59,0.14);--p-dim:rgba(255,59,59,0.08);
+  --green:#34d399;--blue:#60a5fa;--amber:#fbbf24;--red:#ff3b3b;
+  --text:#f5f5f5;--text2:#999999;--text3:#555555;
+  --font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --r:10px;--r2:16px;--r3:20px
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;line-height:1.5;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:radial-gradient(circle,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:28px 28px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;top:-180px;left:50%;transform:translateX(-50%);width:800px;height:420px;background:radial-gradient(ellipse at center,rgba(255,59,59,0.12) 0%,transparent 68%);pointer-events:none;z-index:0}
+
+/* OVERLAY */
+#setup-overlay{position:fixed;inset:0;background:rgba(8,9,14,0.93);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px}
+#setup-box{background:var(--card);border:1px solid var(--border2);border-radius:var(--r3);padding:36px;width:100%;max-width:480px;position:relative;overflow:hidden}
+#setup-box::before{content:'';position:absolute;top:-70px;right:-70px;width:220px;height:220px;background:radial-gradient(circle,rgba(255,59,59,0.15) 0%,transparent 70%);pointer-events:none}
+.ob-badge{display:inline-flex;align-items:center;gap:7px;background:var(--p-dim);border:1px solid rgba(255,59,59,0.22);border-radius:20px;padding:5px 13px;font-size:12px;color:var(--p);margin-bottom:16px;font-weight:500}
+.ob-badge-dot{width:6px;height:6px;background:var(--p);border-radius:50%;animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#setup-box h2{font-size:24px;font-weight:600;margin-bottom:8px;letter-spacing:-.4px}
+#setup-box p{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.75}
+#setup-box a{color:var(--p);text-decoration:none}#setup-box a:hover{text-decoration:underline}
+.sf{margin-bottom:15px}
+.sf label{display:block;font-size:11px;color:var(--text3);margin-bottom:7px;text-transform:uppercase;letter-spacing:.1em;font-weight:500}
+.sf input{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;font-family:var(--mono);font-size:13px;color:var(--text);outline:none;transition:border .2s,box-shadow .2s}
+.sf input:focus{border-color:rgba(255,59,59,0.5);box-shadow:0 0 0 3px var(--p-glow)}
+.info-chip{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.18);border-radius:var(--r);padding:11px 14px;font-size:12px;color:#fcd34d;margin-bottom:20px;line-height:1.7}
+.info-chip code{background:rgba(251,191,36,0.14);padding:1px 5px;border-radius:4px;font-family:var(--mono)}
+
+/* HEADER */
+header{position:relative;z-index:1;padding:34px 48px 0;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.logo{display:flex;align-items:center;gap:14px}
+.logo-mark{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,#cc1f1f 0%,#ff3b3b 100%);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;box-shadow:0 0 24px rgba(255,59,59,0.35)}
+.logo-copy h1{font-size:17px;font-weight:600;letter-spacing:-.2px}
+.logo-copy p{font-size:12px;color:var(--text3);margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px}
+.conn-pill{display:flex;align-items:center;gap:7px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:12px;color:var(--text2)}
+#conn-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:background .3s}
+#conn-dot.on{background:var(--green);box-shadow:0 0 8px rgba(52,211,153,0.55)}
+
+/* BUTTONS */
+.btn{border:none;cursor:pointer;font-family:var(--font);font-weight:500;border-radius:var(--r);transition:all .18s;display:inline-flex;align-items:center;gap:7px;font-size:13px}
+.btn-primary{background:linear-gradient(135deg,#cc1f1f 0%,#ff3b3b 100%);color:#fff;padding:11px 26px;font-size:14px;font-weight:600;box-shadow:0 4px 22px rgba(255,59,59,0.3);border-radius:var(--r)}
+.btn-primary:hover{background:linear-gradient(135deg,#b01a1a 0%,#e62e2e 100%);box-shadow:0 6px 30px rgba(255,59,59,0.4);transform:translateY(-1px)}
+.btn-primary:active{transform:translateY(0);box-shadow:0 2px 12px rgba(255,59,59,0.25)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:var(--surface);color:var(--text2);border:1px solid var(--border);padding:8px 15px}
+.btn-ghost:hover{border-color:var(--border2);color:var(--text);background:var(--card)}
+.btn-sm{padding:6px 13px;font-size:12px;border-radius:8px}
+
+/* MAIN */
+main{position:relative;z-index:1;max-width:860px;margin:32px auto 100px;padding:0 24px}
+
+/* FORM CARD */
+.fc{background:var(--card);border:1px solid var(--border);border-radius:var(--r3);overflow:hidden}
+.fc-head{padding:20px 28px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.fc-title{display:flex;align-items:center;gap:10px}
+.fc-title h2{font-size:15px;font-weight:600;letter-spacing:-.1px}
+.tag{font-size:11px;font-family:var(--mono);font-weight:500;padding:3px 9px;border-radius:5px;background:var(--p-dim);color:var(--p);border:1px solid rgba(255,59,59,0.2)}
+.fc-body{padding:28px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.fgrp{margin-bottom:22px}
+.slbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.15em;color:var(--text3);margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;font-weight:500}
+.slbl-line{width:14px;height:2px;background:var(--p);border-radius:2px;display:inline-block;flex-shrink:0}
+.field{display:flex;flex-direction:column;gap:6px}
+.lbl{font-size:12px;color:var(--text2);font-weight:500;letter-spacing:.02em}
+.lbl .req{color:var(--p);margin-left:2px}
+
+input[type=text],input[type=url],input[type=date],select{
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);
+  padding:10px 13px;font-family:var(--font);font-size:14px;color:var(--text);
+  outline:none;transition:border .18s,box-shadow .18s,background .18s;
+  width:100%;appearance:none;-webkit-appearance:none
+}
+input[type=text]:focus,input[type=url]:focus,input[type=date]:focus,select:focus{
+  border-color:rgba(255,59,59,0.5);box-shadow:0 0 0 3px var(--p-glow);background:var(--surface)
+}
+input[type=text]:hover,input[type=url]:hover,input[type=date]:hover,select:hover{border-color:var(--border2)}
+input::placeholder{color:var(--text3)}
+input[type=date]::-webkit-calendar-picker-indicator{filter:invert(.4);cursor:pointer}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%235a5878' d='M5 6L0 0h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center;padding-right:34px;cursor:pointer}
+select option{background:var(--card)}
+hr.d{border:none;border-top:1px solid var(--border);margin:22px 0}
+
+/* CHIPS */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:flex;align-items:center;gap:7px;padding:7px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:22px;font-size:13px;cursor:pointer;transition:all .18s;user-select:none;font-weight:500}
+.chip:hover{border-color:var(--border2);background:var(--surface)}
+.chip.on{background:var(--p-dim);border-color:rgba(255,59,59,0.38);color:var(--p)}
+.chip-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+/* STATUS PILLS */
+.spills{display:flex;flex-wrap:wrap;gap:7px}
+.sp{padding:6px 13px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:all .18s;opacity:.48}
+.sp:hover{opacity:.8;transform:translateY(-1px)}
+.sp.on{opacity:1;transform:translateY(0)}
+.s-na{background:rgba(148,163,184,.07);color:#94a3b8}.s-na.on{border-color:rgba(148,163,184,.5);background:rgba(148,163,184,.1)}
+.s-ap{background:rgba(96,165,250,.07);color:#60a5fa}.s-ap.on{border-color:rgba(96,165,250,.5);background:rgba(96,165,250,.1)}
+.s-cd{background:rgba(251,146,60,.07);color:#fb923c}.s-cd.on{border-color:rgba(251,146,60,.5);background:rgba(251,146,60,.1)}
+.s-iv{background:rgba(251,191,36,.07);color:#fbbf24}.s-iv.on{border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.1)}
+.s-or{background:rgba(167,139,250,.07);color:#a78bfa}.s-or.on{border-color:rgba(167,139,250,.5);background:rgba(167,139,250,.1)}
+.s-sl{background:rgba(52,211,153,.07);color:#34d399}.s-sl.on{border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.1)}
+.s-rj{background:rgba(248,113,113,.07);color:#f87171}.s-rj.on{border-color:rgba(248,113,113,.5);background:rgba(248,113,113,.1)}
+.s-cl{background:rgba(107,114,128,.07);color:#6b7280}.s-cl.on{border-color:rgba(107,114,128,.5);background:rgba(107,114,128,.1)}
+
+/* SUBMIT BAR */
+.submit-bar{padding:18px 28px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;background:rgba(14,15,23,0.5)}
+.submit-note{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text3)}
+.submit-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 7px rgba(52,211,153,.5);flex-shrink:0}
+
+/* TOAST */
+#toast{position:fixed;bottom:28px;right:28px;z-index:9999;display:flex;align-items:center;gap:10px;padding:13px 18px;border-radius:14px;font-size:13px;font-weight:500;max-width:340px;transform:translateY(80px) scale(.95);opacity:0;transition:all .35s cubic-bezier(.34,1.56,.64,1);pointer-events:none;backdrop-filter:blur(12px)}
+#toast.show{transform:translateY(0) scale(1);opacity:1}
+#toast.ok{background:rgba(10,18,26,.92);border:1px solid rgba(52,211,153,.28);color:var(--green)}
+#toast.err{background:rgba(10,18,26,.92);border:1px solid rgba(248,113,113,.28);color:var(--red)}
+#toast.ld{background:rgba(22,23,34,.95);border:1px solid var(--border2);color:var(--text2)}
+.ti{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:11px;font-weight:700}
+.ti-ok{background:rgba(52,211,153,.14);color:var(--green)}
+.ti-err{background:rgba(248,113,113,.14);color:var(--red)}
+
+/* HISTORY */
+#hist-sec{margin-top:20px}
+.hist-head{display:flex;align-items:center;margin-bottom:12px;gap:9px}
+.hist-head h3{font-size:12px;color:var(--text3);font-weight:400;text-transform:uppercase;letter-spacing:.1em}
+.cbadge{font-size:11px;font-family:var(--mono);padding:2px 8px;border-radius:4px;background:var(--p-dim);color:var(--p);border:1px solid rgba(255,59,59,0.2)}
+.hist-item{background:var(--card);border:1px solid var(--border);border-radius:var(--r2);padding:14px 18px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;font-size:13px;gap:12px;flex-wrap:wrap;transition:border .18s,background .18s}
+.hist-item:hover{border-color:var(--border2);background:rgba(22,23,34,.8)}
+.hist-co{font-weight:600;font-size:14px;letter-spacing:-.1px}
+.hist-meta{color:var(--text3);font-size:12px;margin-top:3px;display:flex;align-items:center;gap:5px}
+.hist-right{display:flex;align-items:center;gap:9px;flex-shrink:0}
+.sbadge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;white-space:nowrap}
+.hist-time{font-size:11px;color:var(--text3);font-family:var(--mono)}
+
+/* SPINNER */
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,0.12);border-top-color:rgba(255,255,255,0.65);border-radius:50%;animation:rot .55s linear infinite;display:inline-block;flex-shrink:0}
+@keyframes rot{to{transform:rotate(360deg)}}
+
+@media(max-width:600px){
+  .grid-2{grid-template-columns:1fr}
+  header{padding:20px 16px 0}
+  .fc-body,.fc-head,.submit-bar{padding-left:18px;padding-right:18px}
+  main{padding:0 10px;margin-top:20px}
+  .spills{gap:6px}
+}
+</style>
+</head>
+<body>
+
+<!-- SETUP OVERLAY -->
+<div id="setup-overlay">
+  <div id="setup-box">
+    <div class="ob-badge"><span class="ob-badge-dot"></span>Notion Integration</div>
+    <h2>Connect your workspace</h2>
+    <p>
+      <strong style="color:var(--text)">Step 1 — Notion token:</strong><br>
+      Go to <a href="https://www.notion.so/my-integrations" target="_blank">notion.so/my-integrations</a>
+      → New Integration → copy the token. Open your database → ••• → <strong style="color:var(--text)">Connections</strong> → add your integration.<br><br>
+      <strong style="color:var(--text)">Step 2 — Backend URL:</strong><br>
+      Deploy <code style="background:rgba(255,59,59,0.12);color:var(--p);padding:1px 5px;border-radius:3px;font-family:var(--mono)">server.js</code> on Render (free). Paste the URL below.
+    </p>
+    <div class="info-chip">💡 Your token is stored only in your browser's localStorage — never sent to a third party.</div>
+    <div class="sf">
+      <label>Notion Integration Token</label>
+      <input type="password" id="tok" placeholder="secret_xxxxxxxxxxxxxxxxxxxx" autocomplete="off"/>
+    </div>
+    <div class="sf">
+      <label>Backend URL</label>
+      <input type="text" id="backend-url" placeholder="https://my-proxy.onrender.com"/>
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center;margin-top:6px" onclick="saveSettings()">
+      Connect to Notion →
+    </button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-mark">🎯</div>
+    <div class="logo-copy">
+      <h1>Placement Tracker</h1>
+      <p>Quick-fill your Notion database</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="conn-pill">
+      <span id="conn-dot"></span>
+      <span id="conn-lbl">Not connected</span>
+    </div>
+    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('setup-overlay').style.display='flex'">
+      ⚙ Settings
+    </button>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main>
+  <div class="fc">
+    <div class="fc-head">
+      <div class="fc-title">
+        <h2>New Application</h2>
+        <span class="tag">Internship &amp; Placement</span>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="resetForm()">✕ Clear</button>
+    </div>
+
+    <div class="fc-body">
+      <div class="slbl"><span class="slbl-line"></span>Company &amp; Role</div>
+      <div class="grid-2 fgrp">
+        <div class="field">
+          <label class="lbl">Company <span class="req">*</span></label>
+          <input type="text" id="f-co" placeholder="TCS, Cognizant, Infosys…"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Role</label>
+          <input type="text" id="f-role" placeholder="Software Engineer, SDE…"/>
+        </div>
+      </div>
+
+      <div class="grid-2 fgrp">
+        <div class="field">
+          <label class="lbl">Type <span class="req">*</span></label>
+          <select id="f-type">
+            <option value="">Select type…</option>
+            <option value="Job">Full-time Job</option>
+            <option value="Internship">Internship</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="lbl">Campus</label>
+          <select id="f-campus">
+            <option value="">Select campus…</option>
+            <option value="On Campus">On Campus</option>
+            <option value="Off Campus">Off Campus</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field fgrp">
+        <label class="lbl" style="margin-bottom:10px">Work Mode</label>
+        <div class="chips" id="loc-chips">
+          <div class="chip" data-val="On-Site" onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#34d399"></span>On-Site</div>
+          <div class="chip" data-val="Hybrid"  onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#fbbf24"></span>Hybrid</div>
+          <div class="chip" data-val="Remote"  onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#60a5fa"></span>Remote</div>
+        </div>
+      </div>
+
+      <hr class="d">
+
+      <div class="slbl"><span class="slbl-line"></span>Application Status</div>
+      <div class="fgrp">
+        <div class="spills" id="s-pills">
+          <div class="sp s-na on" data-val="Not Applied"    onclick="setStatus(this)">Not Applied</div>
+          <div class="sp s-ap"    data-val="Applied"        onclick="setStatus(this)">Applied</div>
+          <div class="sp s-cd"    data-val="Coding Round"   onclick="setStatus(this)">Coding Round</div>
+          <div class="sp s-iv"    data-val="Interviewing"   onclick="setStatus(this)">Interviewing</div>
+          <div class="sp s-or"    data-val="Offer Received" onclick="setStatus(this)">Offer Received</div>
+          <div class="sp s-sl"    data-val="Selected"       onclick="setStatus(this)">Selected</div>
+          <div class="sp s-rj"    data-val="Rejected"       onclick="setStatus(this)">Rejected</div>
+          <div class="sp s-cl"    data-val="Closed"         onclick="setStatus(this)">Closed</div>
+        </div>
+      </div>
+
+      <hr class="d">
+
+      <div class="slbl"><span class="slbl-line"></span>Details</div>
+      <div class="grid-2 fgrp">
+        <div class="field">
+          <label class="lbl">Application Deadline</label>
+          <input type="date" id="f-dl"/>
+        </div>
+        <div class="field">
+          <label class="lbl">Apply Link</label>
+          <input type="url" id="f-link" placeholder="https://careers.company.com/…"/>
+        </div>
+      </div>
+    </div>
+
+    <div class="submit-bar">
+      <div class="submit-note">
+        <span class="submit-dot"></span>
+        Inserts directly into your Notion database
+      </div>
+      <button class="btn btn-primary" id="sub-btn" onclick="submit()">Add to Notion ↗</button>
+    </div>
+  </div>
+
+  <div id="hist-sec" style="display:none">
+    <div class="hist-head">
+      <h3>Added this session</h3>
+      <span class="cbadge" id="hist-count">0</span>
+    </div>
+    <div id="hist-list"></div>
+  </div>
+</main>
+
+<div id="toast"></div>
+
+<script>
+const DB_ID = '2e3d6381eafb80aa8100d9c4dbb18193';
+let token = '', backendURL = '', history = [];
+
+function saveSettings(){
+  const t = document.getElementById('tok').value.trim();
+  const u = document.getElementById('backend-url').value.trim().replace(/\/$/,'');
+  if(!t){ alert('Enter your Notion token'); return; }
+  if(!u){ alert('Enter your backend URL'); return; }
+  token = t; backendURL = u;
+  localStorage.setItem('_nt', t); localStorage.setItem('_bu', u);
+  document.getElementById('setup-overlay').style.display = 'none';
+  setConn(true);
+}
+function setConn(on){
+  document.getElementById('conn-dot').className = on ? 'on' : '';
+  document.getElementById('conn-lbl').textContent = on ? 'Connected' : 'Not connected';
+}
+window.onload = () => {
+  const t = localStorage.getItem('_nt'), u = localStorage.getItem('_bu');
+  if(t) document.getElementById('tok').value = t;
+  if(u) document.getElementById('backend-url').value = u;
+  if(t && u){ token=t; backendURL=u; document.getElementById('setup-overlay').style.display='none'; setConn(true); }
+};
+function setStatus(el){ document.querySelectorAll('.sp').forEach(p=>p.classList.remove('on')); el.classList.add('on'); }
+function getStatus(){ const a=document.querySelector('.sp.on'); return a?a.dataset.val:'Not Applied'; }
+function getLocs(){ return [...document.querySelectorAll('#loc-chips .chip.on')].map(c=>c.dataset.val); }
+function resetForm(){
+  ['f-co','f-role','f-dl','f-link'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('f-type').value=''; document.getElementById('f-campus').value='';
+  document.querySelectorAll('#loc-chips .chip').forEach(c=>c.classList.remove('on'));
+  document.querySelectorAll('.sp').forEach(p=>p.classList.remove('on'));
+  document.querySelector('.s-na').classList.add('on');
+}
+function toast(msg, type='ld', sub=''){
+  const t = document.getElementById('toast');
+  const ic = { ok:`<div class="ti ti-ok">✓</div>`, err:`<div class="ti ti-err">✕</div>`, ld:`<div class="spin"></div>` };
+  t.innerHTML = ic[type]+`<div><div>${msg}</div>${sub?`<div style="font-size:11px;opacity:.55;margin-top:2px">${sub}</div>`:''}</div>`;
+  t.className = 'show ' + type;
+  if(type !== 'ld') setTimeout(()=>t.classList.remove('show'), 3800);
+}
+async function submit(){
+  if(!token||!backendURL){ document.getElementById('setup-overlay').style.display='flex'; return; }
+  const co = document.getElementById('f-co').value.trim();
+  if(!co){ toast('Company name is required','err'); document.getElementById('f-co').focus(); return; }
+  const role=document.getElementById('f-role').value.trim();
+  const type=document.getElementById('f-type').value;
+  const camp=document.getElementById('f-campus').value;
+  const dl=document.getElementById('f-dl').value;
+  const link=document.getElementById('f-link').value.trim();
+  const locs=getLocs(); const stat=getStatus();
+  const btn=document.getElementById('sub-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Adding…';
+  toast('Adding to Notion…','ld',co);
+  const props={
+    "Company":{"title":[{"text":{"content":co}}]},
+    "Status":{"status":{"name":stat}}
+  };
+  if(role) props["Role"]={"rich_text":[{"text":{"content":role}}]};
+  if(type) props["Job / Intern"]={"select":{"name":type}};
+  if(camp) props["On / Off Campus"]={"select":{"name":camp}};
+  if(link) props["Apply Link"]={"url":link};
+  if(locs.length) props["Location "]={"multi_select":locs.map(l=>({name:l}))};
+  if(dl) props["Application Deadline"]={"date":{"start":dl}};
+  const body=JSON.stringify({parent:{database_id:DB_ID},properties:props});
+  try {
+    const r=await fetch(backendURL+'/add-entry',{method:'POST',headers:{'Content-Type':'application/json','x-notion-token':token},body});
+    const data=await r.json();
+    if(!r.ok||data.error) throw new Error(data.error||'Server error '+r.status);
+    toast('"'+co+'" added!','ok',stat+(role?' · '+role:''));
+    history.unshift({co,role,type,stat,dl,t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+    renderHist(); resetForm();
+  } catch(e){ toast(e.message,'err','Check token & backend URL'); }
+  finally{ btn.disabled=false; btn.innerHTML='Add to Notion ↗'; }
+}
+const SC={
+  'Not Applied':{bg:'rgba(148,163,184,.1)',c:'#94a3b8'},
+  'Applied':{bg:'rgba(96,165,250,.1)',c:'#60a5fa'},
+  'Coding Round':{bg:'rgba(251,146,60,.1)',c:'#fb923c'},
+  'Interviewing':{bg:'rgba(251,191,36,.1)',c:'#fbbf24'},
+  'Offer Received':{bg:'rgba(167,139,250,.1)',c:'#a78bfa'},
+  'Selected':{bg:'rgba(52,211,153,.1)',c:'#34d399'},
+  'Rejected':{bg:'rgba(248,113,113,.1)',c:'#f87171'},
+  'Closed':{bg:'rgba(107,114,128,.1)',c:'#6b7280'}
+};
+function renderHist(){
+  document.getElementById('hist-sec').style.display='block';
+  document.getElementById('hist-count').textContent=history.length;
+  const s=x=>SC[x]||SC['Not Applied'];
+  document.getElementById('hist-list').innerHTML=history.map(h=>`
+    <div class="hist-item">
+      <div>
+        <div class="hist-co">${h.co}</div>
+        <div class="hist-meta">
+          ${h.role?`<span>${h.role}</span>`:''}
+          ${h.type?`<span style="color:var(--border2)">·</span><span>${h.type}</span>`:''}
+          ${h.dl?`<span style="color:var(--border2)">·</span><span>${h.dl}</span>`:''}
+        </div>
+      </div>
+      <div class="hist-right">
+        <span class="sbadge" style="background:${s(h.stat).bg};color:${s(h.stat).c}">${h.stat}</span>
+        <span class="hist-time">${h.t}</span>
+      </div>
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
