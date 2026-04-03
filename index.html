@@ -372,15 +372,21 @@ async function submit(){
   if(locs.length) props["Location "]={"multi_select":locs.map(l=>({name:l}))};
   if(dl) props["Application Deadline"]={"date":{"start":dl}};
   const body=JSON.stringify({parent:{database_id:DB_ID},properties:props});
+  const wakeTimer=setTimeout(()=>toast('Server waking up… hang tight (~30s)','ld',co),5000);
+  const controller=new AbortController();
+  const hardTimeout=setTimeout(()=>controller.abort(),65000);
   try {
-    const r=await fetch(backendURL+'/add-entry',{method:'POST',headers:{'Content-Type':'application/json','x-notion-token':token},body});
+    const r=await fetch(backendURL+'/add-entry',{method:'POST',headers:{'Content-Type':'application/json','x-notion-token':token},body,signal:controller.signal});
     const data=await r.json();
     if(!r.ok||data.error) throw new Error(data.error||'Server error '+r.status);
     toast('"'+co+'" added!','ok',stat+(role?' · '+role:''));
     history.unshift({co,role,type,stat,dl,t:new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
     renderHist(); resetForm();
-  } catch(e){ toast(e.message,'err','Check token & backend URL'); }
-  finally{ btn.disabled=false; btn.innerHTML='Add to Notion ↗'; }
+  } catch(e){
+    if(e.name==='AbortError') toast('Timed out — server was asleep, try again now','err','Render free tier sleeps after inactivity');
+    else toast(e.message,'err','Check token & backend URL');
+  }
+  finally{ clearTimeout(wakeTimer); clearTimeout(hardTimeout); btn.disabled=false; btn.innerHTML='Add to Notion ↗'; }
 }
 const SC={
   'Not Applied':{bg:'rgba(148,163,184,.1)',c:'#94a3b8'},
