@@ -268,6 +268,8 @@ hr.d{border:none;border-top:1px solid rgba(0,200,255,0.08);margin:22px 0;box-sha
           <div class="chip" data-val="Cloud"      onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#60a5fa"></span>Cloud</div>
           <div class="chip" data-val="Ai"         onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#f87171"></span>AI</div>
           <div class="chip" data-val="backend"    onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#a78bfa"></span>Backend</div>
+          <div class="chip" data-val="frontend"   onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#22d3ee"></span>Frontend</div>
+          <div class="chip" data-val="full stack" onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#818cf8"></span>Full Stack</div>
           <div class="chip" data-val="react"      onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#f472b6"></span>React</div>
           <div class="chip" data-val="javascript" onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#fbbf24"></span>JavaScript</div>
           <div class="chip" data-val="python"     onclick="this.classList.toggle('on')"><span class="chip-dot" style="background:#34d399"></span>Python</div>
@@ -355,6 +357,7 @@ function setStatus(el){ document.querySelectorAll('.sp').forEach(p=>p.classList.
 function getStatus(){ const a=document.querySelector('.sp.on'); return a?a.dataset.val:'Not Applied'; }
 function getLocs(){ return [...document.querySelectorAll('#loc-chips .chip.on')].map(c=>c.dataset.val); }
 function getLangs(){ return [...document.querySelectorAll('#lang-chips .chip.on')].map(c=>c.dataset.val); }
+function setLang(el){ document.querySelectorAll('#lang-chips .chip').forEach(c=>c.classList.remove('on')); el.classList.toggle('on'); }
 function resetForm(){
   ['f-co','f-role','f-dl','f-link'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('f-type').value=''; document.getElementById('f-campus').value='';
